@@ -5534,7 +5534,7 @@ public:
         });
       }
     }
-    for (const auto &[slot, entry] : state_.OutputMerger.UAVs) {
+    for (const auto &[slot, entry] : state_.ComputeStageUAV.UAVs) {
       auto pUAV = entry.View.ptr();
       if (auto buffer = pUAV->buffer()) {
         EmitST([=, buffer = std::move(buffer), viewId = pUAV->viewId(), counter = pUAV->counter(),
