@@ -4835,6 +4835,9 @@ MTLD3D9Device::GetRenderTargetData(IDirect3DSurface9 *pRenderTarget, IDirect3DSu
   // commits a sync chunk and waits; autoreleased Metal handles (blit
   // encoder, fence) leak across every screenshot capture without it.
   auto pool = WMT::MakeAutoreleasePool();
+  // Opt-in (default off). Serves tiny GetRenderTargetData readbacks, such as a 1x1
+  // exposure sample, one frame late instead of waiting on the GPU. Applies to
+  // 32-bit D3D9 games that read a small render target back every frame.
   static const bool late_enabled = [] { const auto v = env::getEnvVar("DXMT_D9_LATE_READBACK"); return !v.empty() && v != "0"; }();
   // A lost non-Ex device fails the readback with DEVICELOST (DXVK
   // d3d9_device.cpp GetRenderTargetData); Ex devices never enter Lost.
