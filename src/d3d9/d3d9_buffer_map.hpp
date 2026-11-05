@@ -62,7 +62,8 @@ namespace dxmt {
 // contents over. There is no mirror and no refresh, so the per-draw whole-buffer
 // copy is gone: Team Fortress 2's timedemo went from 42.8 to 83.7 fps on an
 // iPhone 15 Pro Max. A write outside the declared range or after Unlock reaches
-// the draw as it does on Windows. MADEIRA_D3D9_DIRECT_MAP=0 keeps the mirror.
+// the draw as it does on Windows. madeira-bcd: MADEIRA_D3D9_DIRECT_MAP=1 turns it
+// on (off otherwise: the mirror).
 
 // Lock-flag sanitisation. The runtime silently drops flags that the
 // pool/usage/device combination does not honour before any of them take

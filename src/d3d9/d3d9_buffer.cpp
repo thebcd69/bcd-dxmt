@@ -46,12 +46,14 @@ renameDynamicBuffer(MTLD3D9Device *device, DynamicBuffer *dynamic, uint64_t curr
 // Direct mapping (d3d9_buffer_map.hpp): a 64-bit guest can address Metal's own
 // allocation, so both premises of the mirror are gone for it. The native ARM64
 // frontend also builds without __i386__ but serves 32-bit guests
-// (DXMT_MADEIRA), so it keeps the mirror. MADEIRA_D3D9_DIRECT_MAP=0 keeps the
-// mirror here too. Read once.
+// (DXMT_MADEIRA), so it keeps the mirror. Read once.
+// madeira-bcd: off unless MADEIRA_D3D9_DIRECT_MAP=1 (upstream turns it on and
+// MADEIRA_D3D9_DIRECT_MAP=0 turns it off): BCD's 64-bit Direct3D 9 games work
+// through the mirror today, so the faster path is opt-in per game.
 bool
 directMapEnabled() {
 #if defined(__x86_64__) && !defined(DXMT_MADEIRA)
-  static const bool enabled = env::getEnvVar("MADEIRA_D3D9_DIRECT_MAP") != "0";
+  static const bool enabled = env::getEnvVar("MADEIRA_D3D9_DIRECT_MAP") == "1";
   return enabled;
 #else
   return false;
