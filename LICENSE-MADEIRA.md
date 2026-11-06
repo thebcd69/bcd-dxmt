@@ -243,6 +243,23 @@ Three limits, stated plainly rather than left implied:
   copy keeps their MIT rights to it.
 - It cannot stop anyone independently reimplementing the same ideas.
 
+## Contributions taken from Madeira's DXMT fork after 2026-10-15
+
+Commits of Madeira's DXMT fork (`willfaust/dxmt`, branch `ios-port`) that this fork took after the two forks diverged on 2026-10-15,
+or just before it where this fork did not yet have them, with the authors kept in the commit history. Madeira accepts contributions under
+`CONTRIBUTING.md` (GPL-3.0-or-later with the Madeira Converter Exception) and the copyright stays with the authors; code in
+`src/d3d9/` sits in the LGPL-2.1-or-later import described above and is offered under that import's terms. The first hash is the commit
+in this fork, the second the same commit in Madeira's fork. The pin moved to them on 2026-11-05.
+
+- **125hz**: `840a301288d` (`d8894f4f8ea`), `6a82662c7a0` (`a828d75d257`) and `3940206bcc8` (`19ea6911700`), 2026-10-27, pipelines kept
+  in Metal binary archives of our own, compiled once and kept across builds under a size cap (`src/winemetal/unix/winemetal_unix.c`);
+  `8dca0db5ebd` (`1f617cd5bbe`), 2026-11-01, frame generation follows one layer and never waits on its lock.
+- **Ixion**: `a7989dd2fdd` (`880241a2022`) and `970c92f6896` (`4842a041130`), 2026-10-24, Direct3D 9 dynamic buffers locked in place
+  and direct-mapped buffers in cached memory (`src/d3d9/d3d9_buffer.cpp`, `d3d9_buffer.hpp`, `d3d9_buffer_map.hpp`).
+- **alantangok**: `55e1e5aebab` (`aa7f5ccff95`) and `da328834976` (`0ec3585ad0f`), 2026-10-18, Direct3D 9 state blocks keep unrecorded
+  sampler and texture stage states, and unused fixed-function light uniforms are initialised (`src/d3d9/d3d9_state_block.cpp`,
+  `d3d9_state_block_changes.hpp`, `d3d9_device.cpp`, `tests/d3d9/stateblock_recording.c`, `tests/d3d9/check_ffp_light_upload.py`).
+
 ## Contributing
 
 Contributions are accepted under **GPL-3.0-or-later**. See `CONTRIBUTING.md`.
