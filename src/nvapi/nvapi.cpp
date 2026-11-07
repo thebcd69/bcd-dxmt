@@ -781,11 +781,40 @@ NvAPI_D3D_SetVerticalSyncMode(IUnknown *pDev, NVAPI_VSYNC_MODE vsyncMode) {
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetPstates20(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATES20_INFO *pPstatesInfo) {
+  bool nullHandle = !hPhysicalGpu;
   hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetPstates20");
   if (!hPhysicalGpu || !pPstatesInfo)
     return NVAPI_INVALID_ARGUMENT;
 
-  return NVAPI_NO_IMPLEMENTATION;
+  /* A call with a handle is answered as before (no performance states). */
+  if (!nullHandle)
+    return NVAPI_NO_IMPLEMENTATION;
+
+  /* madeira-bcd (2026-11-07, The Last of Us Part I, build 637): the game's ndgi::Adapter::InitPerfInfo asks with a
+   * null handle and asserts unless this succeeds: one P0 state with the boost and memory clocks GetAllClockFrequencies
+   * reports above (GeForce RTX 4090: 2520 MHz, 10501 MHz), no editable values, no voltages. */
+  NvU32 version = pPstatesInfo->version;
+  size_t size;
+  if (version == NV_GPU_PERF_PSTATES20_INFO_VER1)
+    size = sizeof(NV_GPU_PERF_PSTATES20_INFO_V1);
+  else if (version == NV_GPU_PERF_PSTATES20_INFO_VER2 || version == NV_GPU_PERF_PSTATES20_INFO_VER3)
+    size = sizeof(NV_GPU_PERF_PSTATES20_INFO_V2);
+  else
+    return NVAPI_INCOMPATIBLE_STRUCT_VERSION;
+  memset(pPstatesInfo, 0, size);
+  pPstatesInfo->version = version;
+  pPstatesInfo->numPstates = 1;
+  pPstatesInfo->numClocks = 2;
+  pPstatesInfo->numBaseVoltages = 0;
+  auto &p0 = pPstatesInfo->pstates[0];
+  p0.pstateId = NVAPI_GPU_PERF_PSTATE_P0;
+  p0.clocks[0].domainId = NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS;
+  p0.clocks[0].typeId = NVAPI_GPU_PERF_PSTATE20_CLOCK_TYPE_SINGLE;
+  p0.clocks[0].data.single.freq_kHz = 2520000;
+  p0.clocks[1].domainId = NVAPI_GPU_PUBLIC_CLOCK_MEMORY;
+  p0.clocks[1].typeId = NVAPI_GPU_PERF_PSTATE20_CLOCK_TYPE_SINGLE;
+  p0.clocks[1].data.single.freq_kHz = 10501000;
+  return NVAPI_OK;
 }
 
 NVAPI_INTERFACE
