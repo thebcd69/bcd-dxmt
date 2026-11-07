@@ -301,6 +301,23 @@ NvAPI_D3D_SetResourceHint(
   return NVAPI_OK;
 }
 
+/* madeira-bcd (2026-11-07, The Last of Us Part I): the game asks for its GPU's performance information with a null
+ * physical GPU handle. Those calls were refused (NVAPI_INVALID_ARGUMENT) and the game asserted in
+ * ndgi::Adapter::InitPerfInfo. A null handle now names the first (on iOS the only) GPU, in the per-GPU calls below that
+ * refused it; a call with a handle is answered as before. Logged once per call. */
+static NvPhysicalGpuHandle
+madeira_nv_null_gpu(NvPhysicalGpuHandle h, const char *call) {
+  if (h)
+    return h;
+  auto devices = WMT::CopyAllDevices();
+  if (devices.count() == 0)
+    return h;
+  static std::atomic<unsigned> logged{0};
+  if (logged.fetch_add(1, std::memory_order_relaxed) < 16)
+    Logger::info(str::format("[nvapi] ", call, " with a null handle: answered for the first GPU"));
+  return (NvPhysicalGpuHandle)devices.object(0).registryID();
+}
+
 NVAPI_INTERFACE
 NvAPI_EnumPhysicalGPUs(NvPhysicalGpuHandle nvGPUHandle[NVAPI_MAX_PHYSICAL_GPUS], NvU32 *pGpuCount) {
   if (!nvGPUHandle || !pGpuCount)
@@ -582,6 +599,7 @@ NvAPI_GPU_GetAllClockFrequencies(__in NvPhysicalGpuHandle hPhysicalGPU,
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetArchInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_ARCH_INFO *pGpuArchInfo) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetArchInfo");
   if (!hPhysicalGpu || !pGpuArchInfo)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -625,6 +643,7 @@ NvAPI_GPU_GetGpuCoreCount(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pCount) {
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetBusId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pBusId) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetBusId");
   if (!hPhysicalGpu || !pBusId)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -633,6 +652,7 @@ NvAPI_GPU_GetBusId(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pBusId) {
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetBusType(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_BUS_TYPE *pBusType) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetBusType");
   if (!hPhysicalGpu || !pBusType)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -641,6 +661,7 @@ NvAPI_GPU_GetBusType(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_BUS_TYPE *pBusType
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetMemoryInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_DISPLAY_DRIVER_MEMORY_INFO *pMemoryInfo) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetMemoryInfo");
   if (!hPhysicalGpu || !pMemoryInfo)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -649,6 +670,7 @@ NvAPI_GPU_GetMemoryInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_DISPLAY_DRIVER_MEMO
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetMemoryInfoEx(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_MEMORY_INFO_EX *pMemoryInfo) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetMemoryInfoEx");
   if (!hPhysicalGpu || !pMemoryInfo)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -759,6 +781,7 @@ NvAPI_D3D_SetVerticalSyncMode(IUnknown *pDev, NVAPI_VSYNC_MODE vsyncMode) {
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetPstates20(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATES20_INFO *pPstatesInfo) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetPstates20");
   if (!hPhysicalGpu || !pPstatesInfo)
     return NVAPI_INVALID_ARGUMENT;
 
@@ -956,6 +979,7 @@ NvAPI_GPU_GetPCIIdentifiers(
 ) {
   if (!pDeviceId || !pSubSystemId || !pRevisionId || !pExtDeviceId)
     return NVAPI_INVALID_ARGUMENT;
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetPCIIdentifiers");
   if (!FindDevice(uint64_t(hPhysicalGpu)))
     return NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE;
 
@@ -1002,6 +1026,7 @@ NvAPI_GPU_GetThermalSettings(
  */
 NVAPI_INTERFACE
 NvAPI_GPU_GetPhysicalFrameBufferSize(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pSize) {
+  hPhysicalGpu = madeira_nv_null_gpu(hPhysicalGpu, "GPU_GetPhysicalFrameBufferSize");
   if (!hPhysicalGpu || !pSize)
     return NVAPI_INVALID_ARGUMENT;
 
