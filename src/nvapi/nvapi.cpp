@@ -608,8 +608,15 @@ NvAPI_GPU_GetArchInfo(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_ARCH_INFO *pGpuAr
 
 NVAPI_INTERFACE
 NvAPI_GPU_GetGpuCoreCount(NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pCount) {
-  if (!hPhysicalGpu || !pCount)
+  if (!pCount) {
+    Logger::info(str::format("[nvapi] GetGpuCoreCount refused: no count pointer (handle=", (void *)hPhysicalGpu, ")"));
     return NVAPI_INVALID_ARGUMENT;
+  }
+  /* madeira-bcd (2026-11-07, The Last of Us Part I): a null handle is the one GPU there is. That call was refused
+   * (NVAPI_INVALID_ARGUMENT) and the game's ndgi::Adapter::InitPerfInfo asserted on it; every other handle was
+   * answered before and still is. */
+  if (!hPhysicalGpu)
+    Logger::info("[nvapi] GetGpuCoreCount with a null handle: answered for the one GPU");
 
   // NVIDIA GeForce RTX 4090
   *pCount = 16384;
