@@ -6,6 +6,7 @@
 #include "util_string.hpp"
 #include "winemetal.h"
 #include "wsi_monitor.hpp"
+#include <cstdlib>
 #include <string>
 #define __NVAPI_EMPTY_SAL
 #include "nvapi.h"
@@ -1002,6 +1003,28 @@ NvAPI_GetAssociatedDisplayOutputId(NvDisplayHandle hNvDisplay, NvU32 *pOutputId)
   return NVAPI_EXPECTED_DISPLAY_HANDLE;
 }
 
+/* madeira-bcd (2026-11-07, The Last of Us Part I, build 639): DXGI reports the adapter as 10DE:<customDeviceId> (2544, the
+ * GeForce RTX 3060 the NVIDIA switch sets, as win32u registers it) while GetPCIIdentifiers said device id 0. The game reads
+ * the PCI ids right before it gives up on the adapter ("a GPU supporting D3D_FEATURE_LEVEL_12_0 ... is required").
+ * MADEIRA_NVAPI_DEVICE_ID (hexadecimal, e.g. 2544) puts that device id in the high word; unset keeps device id 0. */
+static NvU32
+madeira_nv_pci_device_id() {
+  static const NvU32 id = []() -> NvU32 {
+    const char *v = std::getenv("MADEIRA_NVAPI_DEVICE_ID");   /* hex PCI device id NVAPI's GetPCIIdentifiers reports (e.g. 2544, the RTX 3060 DXGI reports with the NVIDIA switch); unset: device id 0 as before */
+    if (!v || !*v)
+      return 0;
+    char *end = nullptr;
+    unsigned long x = strtoul(v, &end, 16);
+    if (!end || *end || x == 0 || x > 0xffff) {
+      Logger::info(str::format("[nvapi] MADEIRA_NVAPI_DEVICE_ID=", v, " is not a 16-bit hexadecimal id: device id 0 kept"));
+      return 0;
+    }
+    Logger::info(str::format("[nvapi] PCI device id ", v, " reported (MADEIRA_NVAPI_DEVICE_ID)"));
+    return (NvU32)x;
+  }();
+  return id;
+}
+
 NVAPI_INTERFACE
 NvAPI_GPU_GetPCIIdentifiers(
     NvPhysicalGpuHandle hPhysicalGpu, NvU32 *pDeviceId, NvU32 *pSubSystemId, NvU32 *pRevisionId, NvU32 *pExtDeviceId
@@ -1012,8 +1035,8 @@ NvAPI_GPU_GetPCIIdentifiers(
   if (!FindDevice(uint64_t(hPhysicalGpu)))
     return NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE;
 
-  // vendor 0x10DE in the low word, device id 0
-  *pDeviceId = 0x10DE;
+  // vendor 0x10DE in the low word, the device id in the high word (0 unless MADEIRA_NVAPI_DEVICE_ID names one)
+  *pDeviceId = 0x10DE | (madeira_nv_pci_device_id() << 16);
   *pSubSystemId = 0;
   *pRevisionId = 0;
   *pExtDeviceId = 0;
