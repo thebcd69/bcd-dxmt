@@ -304,11 +304,17 @@ class PipelineCache : public MTLD3D11PipelineCacheBase {
   std::shared_mutex mutex_shares;
 
   /* ml1222: d3d11.keepShaderIR=1 keeps every shader object as SM50Initialize
-   * returns it (what airconv alone does) */
-  bool keep_shader_ir_ = Config::getInstance().getOption<int>("d3d11.keepShaderIR", 0) != 0;
+   * returns it (what airconv alone does).
+   * madeira-bcd: that is the default here (upstream drops unless the option is
+   * 1). A game's file turns the drop on with dxmt = d3d11.keepShaderIR=0; with
+   * the option unset no bytecode is copied, no object is destroyed and
+   * nothing is logged. */
+  bool keep_shader_ir_ = Config::getInstance().getOption<int>("d3d11.keepShaderIR", 1) != 0;
   std::atomic<uint64_t> ir_shaders_{0}, ir_bytecode_bytes_{0}, ir_reparsed_{0}, ir_reparsed_bytes_{0};
 
   void NoteShaderCached(size_t bytecode_length) {
+    if (keep_shader_ir_)   /* madeira-bcd: the default; as before ml1222, no line in the log */
+      return;
     uint64_t n = ++ir_shaders_;
     uint64_t kept = (ir_bytecode_bytes_ += keep_shader_ir_ ? 0 : bytecode_length);
     if (n == 1 || (n & 1023) == 0)
