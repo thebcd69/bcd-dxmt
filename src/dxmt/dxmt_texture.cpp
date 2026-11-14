@@ -1,6 +1,7 @@
 #include "dxmt_texture.hpp"
 #include "dxmt_residency.hpp"
 #include "log/log.hpp"
+#include "util_env.hpp"
 #include "wsi_platform.hpp"
 #include <atomic>
 #include <cassert>
@@ -36,7 +37,10 @@ TextureView::TextureView(TextureAllocation *allocation, TextureViewKey key, Text
    * pixelFormatView (a colour typeless family, see
    * CreateMTLTextureDescriptorInternal) is reported, the first 32 such views, so
    * a layout change there shows in the log. */
-  if (!(allocation->descriptor->usage() & WMTTextureUsagePixelFormatView)) {
+  /* madeira-bcd: only with DXMT_TYPELESS_COMPRESSION=1, the switch that makes
+   * such textures; without it no view is examined and nothing is logged. */
+  static const bool report_pfv_views = env::getEnvVar("DXMT_TYPELESS_COMPRESSION") == "1";
+  if (report_pfv_views && !(allocation->descriptor->usage() & WMTTextureUsagePixelFormatView)) {
     unsigned from = ORIGINAL_FORMAT(allocation->descriptor->pixelFormat());
     unsigned to = ORIGINAL_FORMAT(descriptor.format);
     auto srgb_pair = [](unsigned a, unsigned b) {
