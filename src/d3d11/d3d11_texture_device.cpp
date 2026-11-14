@@ -41,8 +41,22 @@ struct LocalShare {
   bool (*acquire)(void *texture);
   HRESULT (*open)(void *texture, MTLD3D11Device *pDevice, REFIID riid, void **ppTexture);
 };
-static std::mutex local_share_mutex;
-static std::unordered_map<uint32_t, LocalShare> local_shares;
+/* madeira-bcd: off unless MADEIRA_D3D11_LOCAL_SHARE=1 (a game's own file:
+ * env.MADEIRA_D3D11_LOCAL_SHARE = 1). Upstream hands the handles out always;
+ * here a texture made without a shared flag answers GetSharedHandle with NULL
+ * as Windows does, a mach port that cannot be registered fails the creation,
+ * and no handle is looked up, exactly as before, until a game asks. */
+static bool
+LocalShareEnabled() {
+  static const bool enabled = env::getEnvVar("MADEIRA_D3D11_LOCAL_SHARE") == "1";
+  return enabled;
+}
+
+/* madeira-bcd: the table and its lock are never destroyed. A texture that is
+ * still alive when the process ends retires its handle from its destructor,
+ * which may run after this DLL's static objects are gone. */
+static std::mutex &local_share_mutex = *new std::mutex;
+static std::unordered_map<uint32_t, LocalShare> &local_shares = *new std::unordered_map<uint32_t, LocalShare>;
 static uint32_t local_share_next = 1;
 constexpr uint32_t kLocalShareTag = 0x40000000u;
 
@@ -466,6 +480,10 @@ public:
     }
 
     if (!(this->desc.MiscFlags & (D3D11_RESOURCE_MISC_SHARED | D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX))) {
+      if (!LocalShareEnabled()) {   /* madeira-bcd: the default, as Windows */
+        *pSharedHandle = NULL;
+        return S_OK;
+      }
       /* Unity's video output (WindowsVideoTextureOutput) asks its own render
        * textures, made without a shared flag, for a shared handle to open
        * them on the video device, and gives up on NULL: Hollow Knight's
@@ -789,6 +807,10 @@ HRESULT CreateDeviceTextureInternal(MTLD3D11Device *pDevice,
     SharedResourceData runtimeData;
     MakeUniqueSharedName(runtimeData.mach_port_name);
     if (!WMTBootstrapRegister(runtimeData.mach_port_name, mach_port)) {
+      if (!LocalShareEnabled()) {   /* madeira-bcd: the default, as before */
+        ERR("DeviceTexture: Failed to register mach port for shared texture");
+        return E_FAIL;
+      }
       /* An iOS app may not register a service with the bootstrap server, so
        * no texture can be shared by name there; and with Wine, the game and
        * the host in one process, nothing opens it by name either. Keep the
@@ -914,7 +936,7 @@ HRESULT
 ImportSharedTexture(MTLD3D11Device *pDevice, HANDLE hResource, REFIID riid, void **ppTexture) {
   InitReturnPtr(ppTexture);
 
-  if (IsLocalShare(reinterpret_cast<uintptr_t>(hResource))) {
+  if (LocalShareEnabled() && IsLocalShare(reinterpret_cast<uintptr_t>(hResource))) {
     if (ppTexture == nullptr)
       return S_FALSE;
     return LocalShareOpen(pDevice, reinterpret_cast<uintptr_t>(hResource), riid, ppTexture);
