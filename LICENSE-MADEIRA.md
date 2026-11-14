@@ -260,6 +260,46 @@ in this fork, the second the same commit in Madeira's fork. The pin moved to the
   sampler and texture stage states, and unused fixed-function light uniforms are initialised (`src/d3d9/d3d9_state_block.cpp`,
   `d3d9_state_block_changes.hpp`, `d3d9_device.cpp`, `tests/d3d9/stateblock_recording.c`, `tests/d3d9/check_ffp_light_upload.py`).
 
+### Taken on 2026-11-14
+
+More commits of Madeira's DXMT fork, from its branches `ios-port` and `codex/dxmt-consolidation`, on the same terms. Here the hash is
+the commit in Madeira's fork; this fork's commit has the same subject and author. Where this fork changes a default, the next commit,
+by BCD, says so.
+
+- **spitefulowl**: `96a6711f1` (2026-10-07), the shader object airconv returns is dropped after reflection until a variant needs it
+  (`src/d3d11/d3d11_pipeline_cache.cpp`). Here the drop is opt-in (`d3d11.keepShaderIR=0`).
+- **Mattieus-sudo**: `0b28f9ff` (2026-10-16) with the comment of `98d54419` (2026-10-19), opt-in late readback for tiny Direct3D 9
+  render-target readbacks (`src/d3d9/d3d9_device.cpp`).
+- **meshoklv**: `988c6335` and `d811847f` (2026-10-20), a shader resource view made for "all mips" reports the resolved count, and the
+  GS/TS draw-argument marshal loops advance (`src/d3d11/d3d11_resource.hpp`, `src/dxmt/dxmt_command.metal`); `a4d8ab22` and `dfd523ef`
+  (2026-10-21), the opt-ins `DXMT_CMDLIST_KEEP_BLOCK` and `DXMT_DYN_KEEP` (`src/d3d11/d3d11_context_impl.cpp`,
+  `src/dxmt/dxmt_ring_bump_allocator.hpp`, `src/dxmt/dxmt_dynamic.cpp`).
+- **insertfloppy**: `f25e5568` (2026-10-26), `d3d9.customDriver` (`src/d3d9/d3d9_interface.cpp`).
+- **125hz**: `43d07629` (2026-10-09), the kill switch of the 64-bit Direct3D 9 frontend (`src/d3d9/d3d9.cpp`); `91cf47a3` (2026-10-12),
+  DXGI swap chains for Direct3D 12 devices that present through Vulkan (`src/dxgi/dxgi_swapchain_vk.cpp`, `dxgi_factory.cpp`; the
+  interface declarations in `dxgi_vk_interfaces.h` are vkd3d-proton's, LGPL-2.1-or-later, Copyright 2020 Joshua Ashton for Valve
+  Software, header kept).
+- **intraducine**: `ebb9189f` and `7bb5e807` (2026-10-28) with `1aab69fd` (2026-11-11), Direct3D 11 textures shared inside the
+  process and lossless compression kept on colour typeless textures (`src/d3d11/d3d11_texture_device.cpp`,
+  `src/d3d11/d3d11_resource_helper.cpp`, `src/dxmt/dxmt_texture.cpp`, `dxmt_texture.hpp`, `tests/dx11/`). Both adapt the Playport
+  authors' work (`playportdev/playport` commit `412de5f8c0bd`), who keep the copyright in their changes: see `docs/playport-port.md`.
+  Here both are opt-in (`MADEIRA_D3D11_LOCAL_SHARE=1`, `DXMT_TYPELESS_COMPRESSION=1`). Also the harness
+  `tests/d3d9/check_dynamic_rename_wait.py` of `0a690ad7` (2026-10-27), written for the rename drain Madeira took from this fork.
+
+### Fixes taken from upstream DXMT on 2026-11-14
+
+Four one-line fixes of upstream DXMT (`3Shain/dxmt`, Copyright Feifan He for CodeWeavers), taken as they are with the author kept;
+the hash is upstream's. Upstream DXMT is MIT up to its v0.80 (2026-04-23) and LGPL-2.1-or-later after it (`COPYING.LIB` here is that
+licence's text), and each line stays under upstream's terms at its commit: `aeb5fa67` (2026-04-01, MIT; a state restore bound the
+output merger's UAVs to the compute stage, `src/d3d11/d3d11_context_impl.cpp`); `6251cffd` (2026-04-27; a sampler's anisotropy is
+clamped to 1..16, `src/d3d11/d3d11_state_object.cpp`); `32c30a88` (2026-07-17; Direct3D 10's DrawIndexedInstanced passed the start
+index as the start instance) and `e4f868dc` (2026-10-02; IAGetIndexBuffer wrote the null to its parameter instead of through it),
+both in `src/d3d10/d3d10_device.cpp`.
+
+Two more of upstream DXMT's lines are in `src/dxmt/dxmt_command.metal` through meshoklv's backport `d811847f` above, both from
+after v0.80 and so LGPL-2.1-or-later at their commits: the increment of the GS/TS draw-argument marshal loops (`aadf0fbb`,
+2026-04-27) and the zero-size guard in the same two functions (from `46911d73`, 2026-04-27, 3Shain/dxmt issue #200).
+
 ## Contributing
 
 Contributions are accepted under **GPL-3.0-or-later**. See `CONTRIBUTING.md`.
