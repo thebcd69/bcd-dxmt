@@ -536,11 +536,15 @@ isColorRTFormat(D3DFORMAT format) {
   // DXVK allow them, and a program that builds its own one-channel targets
   // (ambient occlusion, blur, masks) through the engine's format table gets
   // a NULL target otherwise and may never finish setting up its frame.
-  // MADEIRA_D3D9_LUMINANCE_RT=0 restores the refusal.
+  // madeira-bcd: opt-in, MADEIRA_D3D9_LUMINANCE_RT=1 allows them (a game's
+  // own line, or auto-tune after "format 50 not render-target-capable").
+  // Unset or any other value: refused as before, so CheckDeviceFormat, the
+  // autogen-mipmap answer and every create gate stay what they were for a
+  // game that probes L8 and takes its fallback.
   case D3DFMT_L8:
   case D3DFMT_A8L8:
   case D3DFMT_L16: {
-    static const bool luminanceRT = env::getEnvVar("MADEIRA_D3D9_LUMINANCE_RT") != "0";
+    static const bool luminanceRT = env::getEnvVar("MADEIRA_D3D9_LUMINANCE_RT") == "1";
     return luminanceRT;
   }
   // D3DFMT_R8G8B8 (24-bit RGB) is intentionally not listed: Metal has
