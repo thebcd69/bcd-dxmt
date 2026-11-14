@@ -4995,6 +4995,17 @@ MTLD3D9Device::GetRenderTargetData(IDirect3DSurface9 *pRenderTarget, IDirect3DSu
         st.signal[0] = st.signal[1] = 0;
         st.warmup = kLateWarmup;
       }
+      // madeira-bcd: the table is keyed by the destination surface's address and
+      // outlives a device. A slot's signal is this device's command sequence at
+      // the time the copy was posted, which is never above the current one; a
+      // larger value was left by another device (the game made its device again
+      // and a new surface got the old address) and would look in flight for ever,
+      // so the readback would return without a copy from then on. Such an entry
+      // starts again, with its warm-up.
+      if (st.signal[0] > m_currentCmdSeq || st.signal[1] > m_currentCmdSeq) {
+        st.signal[0] = st.signal[1] = 0;
+        st.warmup = kLateWarmup;
+      }
       if (st.backing == nullptr) {
         void *backing = guest_alloc(kLateStagingBytes, DXMT_PAGE_SIZE);
         if (backing) {
