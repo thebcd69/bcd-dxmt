@@ -259,6 +259,9 @@ in this fork, the second the same commit in Madeira's fork. The pin moved to the
 - **alantangok**: `55e1e5aebab` (`aa7f5ccff95`) and `da328834976` (`0ec3585ad0f`), 2026-10-18, Direct3D 9 state blocks keep unrecorded
   sampler and texture stage states, and unused fixed-function light uniforms are initialised (`src/d3d9/d3d9_state_block.cpp`,
   `d3d9_state_block_changes.hpp`, `d3d9_device.cpp`, `tests/d3d9/stateblock_recording.c`, `tests/d3d9/check_ffp_light_upload.py`).
+- **125hz**, taken 2026-11-14 (willfaust/Madeira#575, willfaust/dxmt#55): `51768d0dc34` (`e82c8646037`), 2026-11-04, Direct3D 9 luminance
+  formats as render targets, and `3616bde03fe` (`3d62913b75f`), 2026-11-05, which keeps them out of StretchRect conversions
+  (`src/d3d9/d3d9_format.cpp`, `d3d9_interface.cpp`); this fork makes the first one opt-in (`MADEIRA_D3D9_LUMINANCE_RT=1`).
 
 ### Taken on 2026-11-14
 
